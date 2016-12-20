@@ -6,6 +6,7 @@ import burp.IExtensionHelpers;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -50,7 +51,6 @@ public class Utilities {
                 }
 
                 String header_str = helpers.bytesToString(header_name);
-                out(header_str);
 
                 if (header.equals(header_str)) {
 
@@ -67,6 +67,107 @@ public class Utilities {
         } catch (IOException e) {
             throw new RuntimeException("Request creation unexpectedly failed");
         }
+    }
+
+}
+
+class CustomScanIssue implements IScanIssue {
+    private IHttpService httpService;
+    private URL url;
+    private IHttpRequestResponse[] httpMessages;
+    private String name;
+    private String detail;
+    private String severity;
+    private String confidence;
+    private String remediation;
+
+    CustomScanIssue(
+            IHttpService httpService,
+            URL url,
+            IHttpRequestResponse[] httpMessages,
+            String name,
+            String detail,
+            String severity,
+            String confidence,
+            String remediation) {
+        this.name = name;
+        this.detail = detail;
+        this.severity = severity;
+        this.httpService = httpService;
+        this.url = url;
+        this.httpMessages = httpMessages;
+        this.confidence = confidence;
+        this.remediation = remediation;
+    }
+
+    @Override
+    public URL getUrl() {
+        return url;
+    }
+
+    @Override
+    public String getIssueName() {
+        return name;
+    }
+
+    @Override
+    public int getIssueType() {
+        return 0;
+    }
+
+    @Override
+    public String getSeverity() {
+        return severity;
+    }
+
+    @Override
+    public String getConfidence() {
+        return confidence;
+    }
+
+    @Override
+    public String getIssueBackground() {
+        return null;
+    }
+
+    @Override
+    public String getRemediationBackground() {
+        return null;
+    }
+
+    @Override
+    public String getIssueDetail() {
+        return detail;
+    }
+
+    @Override
+    public String getRemediationDetail() {
+        return remediation;
+    }
+
+    @Override
+    public IHttpRequestResponse[] getHttpMessages() {
+        return httpMessages;
+    }
+
+    @Override
+    public IHttpService getHttpService() {
+        return httpService;
+    }
+
+    @Override
+    public String getHost() {
+        return null;
+    }
+
+    @Override
+    public int getPort() {
+        return 0;
+    }
+
+    @Override
+    public String getProtocol() {
+        return null;
     }
 
 }
