@@ -137,15 +137,21 @@ class Injector implements IHttpListener {
     public byte[] injectPayloads(byte[] request, Integer requestCode) {
         byte[] fixed;
 
-        fixed = Utilities.addOrReplaceHeader(request, "User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36 http://"+collab.generateCollabId(requestCode, "User-Agent"));
+        IParameter param = Utilities.helpers.buildParameter("u", "http://"+collab.generateCollabId(requestCode, "u param")+"/u", IParameter.PARAM_URL);
+        fixed = Utilities.helpers.addParameter(request, param);
 
-        fixed = Utilities.addOrReplaceHeader(fixed, "Referer", "http://"+collab.generateCollabId(requestCode, "Referer"));
+        fixed = Utilities.addOrReplaceHeader(fixed, "User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36 http://"+collab.generateCollabId(requestCode, "User-Agent")+"/ua");
+
+        fixed = Utilities.addOrReplaceHeader(fixed, "Referer", "http://"+collab.generateCollabId(requestCode, "Referer")+"/ref");
 
         fixed = Utilities.addOrReplaceHeader(fixed, "X-Wap-Profile", "http://"+collab.generateCollabId(requestCode, "WAP")+"/wap.xml");
 
         fixed = Utilities.addOrReplaceHeader(fixed, "Contact", "user@"+collab.generateCollabId(requestCode, "Contact"));
 
-        // add or overwrite: X-Forwarded-Host, Origin
+        fixed = Utilities.addOrReplaceHeader(fixed, "X-Forwarded-Host", collab.generateCollabId(requestCode, "XFH"));
+
+        fixed = Utilities.addOrReplaceHeader(fixed, "Origin", "http://"+collab.generateCollabId(requestCode, "Origin"));
+
         return fixed;
     }
 
