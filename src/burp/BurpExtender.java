@@ -48,7 +48,7 @@ class Monitor implements Runnable, IExtensionStateListener {
                 Thread.sleep(10000);
                 Utilities.out("Polling");
                 for (IBurpCollaboratorInteraction interaction : collab.fetchAllCollaboratorInteractions()) {
-                    Utilities.out(interaction.getProperties().toString());
+                    processInteraction(interaction);
                 }
             }
         }
@@ -57,6 +57,10 @@ class Monitor implements Runnable, IExtensionStateListener {
         }
 
         Utilities.out("Shutting down collaborator monitor thread");
+    }
+
+    private void processInteraction(IBurpCollaboratorInteraction interaction) {
+        Utilities.out(interaction.getProperties().toString());
     }
 
 }
@@ -80,32 +84,26 @@ class Injector implements IHttpListener {
         if (!messageIsRequest) {
             return;
         }
-        byte[] fixed;
 
         Integer requestCode = count++;
         requests.put(requestCode, messageInfo);
-        String domain = collab.getCollaboratorServerLocation();
+        byte[] fixed;
 
-        String id = collab.generatePayload(false);
-        idToRequestID.put(id, requestCode);
-        id = id+"."+domain;
-        fixed = Utilities.addOrReplaceHeader(messageInfo.getRequest(), "User-Agent", "http://"+id);
+        fixed = Utilities.addOrReplaceHeader(messageInfo.getRequest(), "User-Agent", "http://"+generateCollabId(requestCode));
 
-        id = collab.generatePayload(false);
-        idToRequestID.put(id, requestCode);
-        id = id+"."+domain;
-        fixed = Utilities.addOrReplaceHeader(fixed, "X-Wap-Profile", "http://"+id+"/wap.xml");
+        fixed = Utilities.addOrReplaceHeader(fixed, "X-Wap-Profile", "http://"+generateCollabId(requestCode)+"/wap.xml");
 
-        id = collab.generatePayload(false);
-        idToRequestID.put(id, requestCode);
-        id = id+"."+domain;
-        fixed = Utilities.addOrReplaceHeader(fixed, "Contact", "user@"+id);
+        fixed = Utilities.addOrReplaceHeader(fixed, "Contact", "user@"+generateCollabId(requestCode));
 
         messageInfo.setRequest(fixed);
         Utilities.out("Injected!");
 
         // add or overwrite: Contact, X-Forwarded-Host, Referer, User-Agent, X-Wap-Profile, Origin
-        //messageInfo.setRequest();
+    }
 
+    private String generateCollabId(int requestCode) {
+        String id = collab.generatePayload(false);
+        idToRequestID.put(id, requestCode);
+        return id+"."+collab.getCollaboratorServerLocation();
     }
 }
