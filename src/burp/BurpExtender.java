@@ -3,7 +3,9 @@ package burp;
 import burp.*;
 import com.sun.xml.internal.messaging.saaj.util.Base64;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -62,7 +64,8 @@ class Monitor implements Runnable, IExtensionStateListener {
     private void processInteraction(IBurpCollaboratorInteraction interaction) {
         String id = interaction.getProperty("interaction_id");
         Utilities.out("Got an interaction:"+interaction.getProperties());
-        IHttpRequestResponse req = collab.getRequest(id);
+        MetaRequest metaReq = collab.getRequest(id);
+        IHttpRequestResponse req = metaReq.getRequest();
         String type = collab.getType(id);
 
         String detail = interaction.getProperty("request");
@@ -74,11 +77,29 @@ class Monitor implements Runnable, IExtensionStateListener {
             detail = interaction.getProperty("raw_query");
         }
 
-        detail = "<pre>"+Base64.base64Decode(detail).replace("<", "&lt;")+"</pre><br/><br/>";
+        String message = "The payload was sent at "+new Date(metaReq.getTimestamp()).toString() + " and received on " + interaction.getProperty("time_stamp");
+
+        try {
+            long interactionTime = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss z").parse(interaction.getProperty("time_stamp")).getTime();
+            long mill = interactionTime - metaReq.getTimestamp();
+            int seconds = (int) (mill / 1000) % 60;
+            int minutes = (int) ((mill / (1000 * 60)) % 60);
+            int hours = (int) ((mill / (1000 * 60 * 60)) % 24);
+            message += " indicating a delay of " + String.format("%d hours, %d minutes and %d seconds.", hours, minutes, seconds) + "<br/><br/>";
+        }
+        catch (java.text.ParseException e) {
+            message += e.toString();
+        }
+
+        if (interaction.getProperty("client_ip").equals(collab.getClientIp())) {
+            message += "This interaction appears to have been issued by your IP address<br/>";
+        }
+
+        detail = message + "<pre>"+Base64.base64Decode(detail).replace("<", "&lt;")+"</pre><br/><br/>";
 
 
         Utilities.callbacks.addScanIssue(
-                new CustomScanIssue(req.getHttpService(), req.getUrl(), new IHttpRequestResponse[]{req}, "Collaborator Pingback: "+type, detail+interaction.getProperties().toString(), "Information", "Certain", "Panic"));
+                new CustomScanIssue(req.getHttpService(), req.getUrl(), new IHttpRequestResponse[]{req}, "Collaborator Pingback ("+interaction.getProperty("type")+"): "+type, detail+interaction.getProperties().toString(), "Information", "Certain", "Panic"));
 
     }
 
@@ -86,10 +107,34 @@ class Monitor implements Runnable, IExtensionStateListener {
 
 class MetaRequest {
     private IHttpRequestResponse request;
-    private int correlatorId;
     private int burpId;
-    private int timestamp;
-    
+    private long timestamp;
+
+    MetaRequest(IInterceptedProxyMessage proxyMessage) {
+        request = proxyMessage.getMessageInfo();
+        burpId = proxyMessage.getMessageReference();
+        timestamp = System.currentTimeMillis();
+    }
+
+    public void addResponse(byte[] response) {
+        request.setResponse(response);
+    }
+
+    public void overwriteRequest(IHttpRequestResponse response) {
+        request = response;
+    }
+
+    public IHttpRequestResponse getRequest() {
+        return request;
+    }
+
+    public int getBurpId() {
+        return burpId;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
 }
 
 class Correlator {
@@ -97,23 +142,42 @@ class Correlator {
     private IBurpCollaboratorClientContext collab;
     private HashMap<String, Integer> idToRequestID;
     private HashMap<String, String> idToType;
-    private HashMap<Integer, IHttpRequestResponse> requests;
+    private HashMap<Integer, MetaRequest> requests;
+    private HashMap<Integer, Integer> burpIdToRequestID;
+    private String ip = "";
     private int count = 0;
 
     Correlator() {
         idToRequestID = new HashMap<>();
         requests = new HashMap<>();
         idToType = new HashMap<>();
+        burpIdToRequestID = new HashMap<>();
         collab = Utilities.callbacks.createBurpCollaboratorClientContext();
+
+        try {
+            String pollPayload = collab.generatePayload(true);
+            Utilities.callbacks.makeHttpRequest(pollPayload, 80, false, ("GET / HTTP/1.1\r\nHost: " + pollPayload + "\r\n\r\n").getBytes());
+            for (IBurpCollaboratorInteraction interaction: collab.fetchCollaboratorInteractionsFor(pollPayload)) {
+                if (interaction.getProperty("type").equals("HTTP")) {
+                    ip = interaction.getProperty("client_ip");
+                }
+            }
+            Utilities.out("Calculated your IP: "+ip);
+        }
+        catch (NullPointerException e) {
+            Utilities.out("Unable to calculate client IP - collaborator may not be functional");
+        }
+
     }
 
     java.util.List<IBurpCollaboratorInteraction> poll() {
         return collab.fetchAllCollaboratorInteractions();
     }
 
-    Integer addRequest(IHttpRequestResponse messageInfo) {
+    Integer addRequest(MetaRequest req) {
         Integer requestCode = count++;
-        requests.put(requestCode, messageInfo);
+        requests.put(requestCode, req);
+        burpIdToRequestID.put(req.getBurpId(), requestCode);
         return requestCode;
     }
 
@@ -124,9 +188,23 @@ class Correlator {
         return id+"."+collab.getCollaboratorServerLocation();
     }
 
-    IHttpRequestResponse getRequest(String collabId) {
+    String getLocation() {
+        return collab.getCollaboratorServerLocation();
+    }
+
+    String getClientIp(){
+        return ip;
+    }
+
+    MetaRequest getRequest(String collabId) {
         int requestId = idToRequestID.get(collabId);
         return requests.get(requestId);
+    }
+
+    void updateResponse(int burpId, IHttpRequestResponse response) {
+        if (burpIdToRequestID.containsKey(burpId)) {
+            requests.get(burpIdToRequestID.get(burpId)).overwriteRequest(response);
+        }
     }
 
     String getType(String collabid) {
@@ -168,13 +246,19 @@ class Injector implements IProxyListener {
     @Override
     public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage proxyMessage) {
         if (!messageIsRequest) {
+            collab.updateResponse(proxyMessage.getMessageReference(), proxyMessage.getMessageInfo());
             return;
         }
-        proxyMessage.getMessageReference();
 
         IHttpRequestResponse messageInfo = proxyMessage.getMessageInfo();
 
-        Integer requestCode = collab.addRequest(messageInfo);
+        // don't tamper with requests already heading to the collaborator
+        if (messageInfo.getHost().endsWith(collab.getLocation())) {
+            return;
+        }
+
+        MetaRequest req = new MetaRequest(proxyMessage);
+        Integer requestCode = collab.addRequest(req);
 
         messageInfo.setRequest(injectPayloads(messageInfo.getRequest(), requestCode));
 
