@@ -23,7 +23,7 @@ public class BurpExtender implements IBurpExtender {
         new Thread(collabMonitor).start();
         callbacks.registerExtensionStateListener(collabMonitor);
 
-        callbacks.registerHttpListener(new Injector(collab));
+        callbacks.registerProxyListener(new Injector(collab));
 
         Utilities.out("Loaded " + name + " v" + version);
     }
@@ -84,6 +84,14 @@ class Monitor implements Runnable, IExtensionStateListener {
 
 }
 
+class MetaRequest {
+    private IHttpRequestResponse request;
+    private int correlatorId;
+    private int burpId;
+    private int timestamp;
+    
+}
+
 class Correlator {
 
     private IBurpCollaboratorClientContext collab;
@@ -126,7 +134,7 @@ class Correlator {
     }
 }
 
-class Injector implements IHttpListener {
+class Injector implements IProxyListener {
 
     private Correlator collab;
 
@@ -148,7 +156,9 @@ class Injector implements IHttpListener {
 
         fixed = Utilities.addOrReplaceHeader(fixed, "Contact", "user@"+collab.generateCollabId(requestCode, "Contact"));
 
-        fixed = Utilities.addOrReplaceHeader(fixed, "X-Forwarded-Host", collab.generateCollabId(requestCode, "XFH"));
+        fixed = Utilities.addOrReplaceHeader(fixed, "X-Arbitrary", "http://"+collab.generateCollabId(requestCode, "Arbitrary")+"/");
+
+        //fixed = Utilities.addOrReplaceHeader(fixed, "X-Forwarded-Host", collab.generateCollabId(requestCode, "XFH"));
 
         fixed = Utilities.addOrReplaceHeader(fixed, "Origin", "http://"+collab.generateCollabId(requestCode, "Origin"));
 
@@ -156,10 +166,13 @@ class Injector implements IHttpListener {
     }
 
     @Override
-    public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
+    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage proxyMessage) {
         if (!messageIsRequest) {
             return;
         }
+        proxyMessage.getMessageReference();
+
+        IHttpRequestResponse messageInfo = proxyMessage.getMessageInfo();
 
         Integer requestCode = collab.addRequest(messageInfo);
 
