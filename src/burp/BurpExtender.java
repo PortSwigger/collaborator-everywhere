@@ -6,10 +6,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Scanner;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Collaborator Everywhere";
-    private static final String version = "0.1";
+    private static final String version = "0.11";
 
     // provides potentially useful info but increases memory usage
     static final boolean SAVE_RESPONSES = false;
@@ -94,6 +95,7 @@ class Monitor implements Runnable, IExtensionStateListener {
 
         if (collab.isClientIP(interaction.getProperty("client_ip"))) {
             message += "<b>This interaction appears to have been issued by your IP address</b><br/><br/>";
+            severity = "Low";
         }
 
         message += "<pre>    "+Base64.base64Decode(rawDetail).replace("<", "&lt;").replace("\n", "\n    ")+"</pre>";
@@ -212,48 +214,50 @@ class Correlator {
 class Injector implements IProxyListener {
 
     private Correlator collab;
+    HashSet<String[]> injectionPoints = new HashSet<>();
+
 
     Injector(Correlator collab) {
         this.collab = collab;
+
+        Scanner s = new Scanner(getClass().getResourceAsStream("/injections"));
+        while (s.hasNext()) {
+            String injection = s.next();
+            if (injection.charAt(0) == '#') {
+                continue;
+            }
+            injectionPoints.add(injection.split(",", 2));
+        }
+        s.close();
+
     }
 
     public byte[] injectPayloads(byte[] request, Integer requestCode) {
-        byte[] fixed;
 
-        IParameter param = Utilities.helpers.buildParameter("u", "http://"+collab.generateCollabId(requestCode, "u param")+"/u", IParameter.PARAM_URL);
-        fixed = Utilities.helpers.removeParameter(request, param);
-        // todo url vs host vs email vs param
+        for (String[] injection: injectionPoints) {
+            switch ( injection[0] ){
+                case "param":
+                    IParameter param = Utilities.helpers.buildParameter(injection[1], "http://"+collab.generateCollabId(requestCode, injection[1]+" param"), IParameter.PARAM_URL);
+                    request = Utilities.helpers.removeParameter(request, param);
+                    request = Utilities.helpers.addParameter(request, param);
+                    break;
 
+                case "email":
+                    request = Utilities.addOrReplaceHeader(request, injection[1], "user@"+collab.generateCollabId(requestCode, injection[1]));
+                    break;
+                case "url":
+                    request = Utilities.addOrReplaceHeader(request, injection[1], "http://"+collab.generateCollabId(requestCode, injection[1])+"/");
+                    break;
+                case "domain":
+                    request = Utilities.addOrReplaceHeader(request, injection[1], collab.generateCollabId(requestCode, injection[1]));
+                    break;
+                default:
+                    Utilities.out("Unrecognised injection type: " + injection[0]);
+            }
+            
+        }
 
-        //fixed = Utilities.helpers.addParameter(fixed, param);
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36 http://"+collab.generateCollabId(requestCode, "User-Agent")+"/ua");
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "Referer", "http://"+collab.generateCollabId(requestCode, "Referer")+"/ref");
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "X-Wap-Profile", "http://"+collab.generateCollabId(requestCode, "WAP")+"/wap.xml");
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "Profile", "http://"+collab.generateCollabId(requestCode, "Profile")+"/profile.xml");
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "Opt", "\"http://www.w3.org/1999./06/24-CCPPexchange\"; ns=19");
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "19-Profile", "http://"+collab.generateCollabId(requestCode, "Opt")+"/opt.xml");
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "Contact", "user@"+collab.generateCollabId(requestCode, "Contact"));
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "X-Arbitrary", "http://"+collab.generateCollabId(requestCode, "Arbitrary")+"/");
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "X-Forwarded-Host", collab.generateCollabId(requestCode, "XFH"));
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "X-Forwarded-For", collab.generateCollabId(requestCode, "XFF"));
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "Destination", collab.generateCollabId(requestCode, "Destination"));
-
-        fixed = Utilities.addOrReplaceHeader(fixed, "Origin", "http://"+collab.generateCollabId(requestCode, "Origin"));
-
-        //fixed = Utilities.addOrReplaceHeader(fixed, "Host", collab.generateCollabId(requestCode, "Host"));
-
-        return fixed;
+        return request;
     }
 
     @Override

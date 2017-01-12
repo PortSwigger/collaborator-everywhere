@@ -32,6 +32,7 @@ public class Utilities {
     }
 
 
+    // this is why hackxor2 is using python
     public static byte[] addOrReplaceHeader(byte[] request, String header, String value) {
         try {
             int i = 0;
@@ -48,6 +49,14 @@ public class Utilities {
                 }
                 if (i == end) {
                     break;
+                }
+
+                if(i+2<end && request[i] == '\r' && request[i+1] == '\n') {
+                    out("cow");
+                    outputStream.write(Arrays.copyOfRange(request, 0, i));
+                    outputStream.write(helpers.stringToBytes(header + ": " + value+"\r\n"));
+                    outputStream.write(Arrays.copyOfRange(request, i, end));
+                    return outputStream.toByteArray();
                 }
 
                 String header_str = helpers.bytesToString(header_name);
