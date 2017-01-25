@@ -3,17 +3,14 @@ package burp;
 import com.sun.xml.internal.messaging.saaj.util.Base64;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Scanner;
+import java.util.*;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Collaborator Everywhere";
     private static final String version = "0.11";
 
     // provides potentially useful info but increases memory usage
-    static final boolean SAVE_RESPONSES = false;
+    static final boolean SAVE_RESPONSES = true;
 
 
     @Override
@@ -68,6 +65,11 @@ class Monitor implements Runnable, IExtensionStateListener {
         IHttpRequestResponse req = metaReq.getRequest();
         String type = collab.getType(id);
         String severity = "High";
+
+
+        if(interaction.getProperty("client_ip").startsWith("74.125.")){
+            return;
+        }
 
         String rawDetail = interaction.getProperty("request");
         if (rawDetail == null) {
@@ -221,12 +223,12 @@ class Injector implements IProxyListener {
         this.collab = collab;
 
         Scanner s = new Scanner(getClass().getResourceAsStream("/injections"));
-        while (s.hasNext()) {
-            String injection = s.next();
+        while (s.hasNextLine()) {
+            String injection = s.nextLine();
             if (injection.charAt(0) == '#') {
                 continue;
             }
-            injectionPoints.add(injection.split(",", 2));
+            injectionPoints.add(injection.split(",", 3));
         }
         s.close();
 
@@ -234,22 +236,46 @@ class Injector implements IProxyListener {
 
     public byte[] injectPayloads(byte[] request, Integer requestCode) {
 
+        //String collabId = collab.generateCollabId(requestCode, "LegitAbsWonkyHost");
+        //String host = Utilities.getHeader(request, "Host");
+        //Utilities.out("hm: '"+host+"'");
+        //request = Utilities.addOrReplaceHeader(request, "Host", host+":80@"+collabId); // worked on Incap
+
+
+        //request = Utilities.addOrReplaceHeader(request, "Host", host+"\r\nHost: a:b@"+collabId);
+        //request = Utilities.replaceRequestLine(request, "GET /?proxy="+collabId+" HTTP/1.1");
+        //request = Utilities.addOrReplaceHeader(request, "Host", collabId+"\r\nHost: "+host);
+
+
+        //request = Utilities.replaceRequestLine(request, "GET http://" + host + "/?q="+collabId.split("[.]")[0] + " HTTP/1.1");
+        //request = Utilities.addOrReplaceHeader(request, "Host", host+":80@"+collabId);
+        //request = Utilities.addOrReplaceHeader(request, "Host", host+"\r\nHost: a:b@"+collabId);
+
+
+        //request = Utilities.replaceRequestLine(request, "GET http://" + collabId + "/?q="+collabId.split("[.]")[0] + " HTTP/1.1"); // worked on bluecoat
+        //request = Utilities.addOrReplaceHeader(request, "Host", host);
+
+        //request = Utilities.replaceRequestLine(request, "GET @"+collabId + "/"+collabId.split("[.]")[0] + " HTTP/1.1"); // worked on newrelic
+
+        //request = Utilities.replaceRequestLine(request, "CONNECT "+collabId + ":443 HTTP/1.1");
+        //request = Utilities.addOrReplaceHeader(request, "X-HTTP-Method-Override", "CONNECT");
+
+        request = Utilities.addOrReplaceHeader(request, "Cache-Control", "no-transform");
+        //String collabId = collab.generateCollabId(requestCode, "Forwarded");
+        //request = Utilities.addOrReplaceHeader(request, "Forwarded", "for="+collabId+";by="+collabId+";host="+collabId);
+
         for (String[] injection: injectionPoints) {
+            String payload = injection[2].replace("%s", collab.generateCollabId(requestCode, injection[1]));
+            Utilities.out(Arrays.toString(injection));
             switch ( injection[0] ){
                 case "param":
-                    IParameter param = Utilities.helpers.buildParameter(injection[1], "http://"+collab.generateCollabId(requestCode, injection[1]+" param"), IParameter.PARAM_URL);
+                    IParameter param = Utilities.helpers.buildParameter(injection[1], payload, IParameter.PARAM_URL);
                     request = Utilities.helpers.removeParameter(request, param);
                     request = Utilities.helpers.addParameter(request, param);
                     break;
 
-                case "email":
-                    request = Utilities.addOrReplaceHeader(request, injection[1], "user@"+collab.generateCollabId(requestCode, injection[1]));
-                    break;
-                case "url":
-                    request = Utilities.addOrReplaceHeader(request, injection[1], "http://"+collab.generateCollabId(requestCode, injection[1])+"/");
-                    break;
-                case "domain":
-                    request = Utilities.addOrReplaceHeader(request, injection[1], collab.generateCollabId(requestCode, injection[1]));
+                case "header":
+                    request = Utilities.addOrReplaceHeader(request, injection[1], payload);
                     break;
                 default:
                     Utilities.out("Unrecognised injection type: " + injection[0]);
@@ -271,6 +297,7 @@ class Injector implements IProxyListener {
 
         IHttpRequestResponse messageInfo = proxyMessage.getMessageInfo();
 
+
         // don't tamper with requests already heading to the collaborator
         if (messageInfo.getHost().endsWith(collab.getLocation())) {
             return;
@@ -285,3 +312,23 @@ class Injector implements IProxyListener {
     }
 
 }
+
+/*class ActiveScanner implements IScannerCheck {
+    @Override
+    public List<IScanIssue> doPassiveScan(IHttpRequestResponse iHttpRequestResponse) {
+        return new ArrayList<IScanIssue>();
+    }
+
+    @Override
+    public List<IScanIssue> doActiveScan(IHttpRequestResponse requestResponse, IScannerInsertionPoint iScannerInsertionPoint) {
+        iHttpRequestResponse.getUrl();
+
+        byte[] attack = Utilities.replaceRequestLine(requestResponse.getRequest(), );
+        return null;
+    }
+
+    @Override
+    public int consolidateDuplicateIssues(IScanIssue iScanIssue, IScanIssue iScanIssue1) {
+        return 0;
+    }
+}*/

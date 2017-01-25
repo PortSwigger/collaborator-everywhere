@@ -31,8 +31,72 @@ public class Utilities {
         stderr.println(message);
     }
 
+    public static byte[] replaceRequestLine(byte[] request, String payload) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            int i = 0;
+            while (request[i++] != '\n') {
+            }
+
+            outputStream.write(payload.getBytes());
+            outputStream.write(Arrays.copyOfRange(request, i-2, request.length));
+        }
+        catch (IOException e) {
+                throw new RuntimeException("Request creation unexpectedly failed");
+        }
+        return outputStream.toByteArray();
+    }
+
+    public static String getPath(byte[] request) {
+        int i = 0;
+        String out = "";
+        while (request[i++] != ' ') {
+        }
+        while (request[i] != ' ' && request[i] != '?') {
+            out += (char) request[i];
+            i++;
+        }
+        return out.substring(0, out.lastIndexOf('/'));
+    }
+
+
+    public static String getHeader(byte[] request, String header) {
+        int[] offsets = getHeaderOffsets(request, header);
+        String value = helpers.bytesToString(Arrays.copyOfRange(request, offsets[1], offsets[2]));
+        return value;
+    }
+
+    public static int[] getHeaderOffsets(byte[] request, String header) {
+        int i = 0;
+        int end = request.length;
+        while (i < end) {
+            int line_start = i;
+            while (i < end && request[i++] != ' ') {
+            }
+            byte[] header_name = Arrays.copyOfRange(request, line_start, i - 2);
+            int headerValueStart = i;
+            while (i < end && request[i++] != '\n') {
+            }
+            if (i == end) {
+                break;
+            }
+
+            if (i + 2 < end && request[i] == '\r' && request[i + 1] == '\n') {
+                break;
+            }
+
+            String header_str = helpers.bytesToString(header_name);
+
+            if (header.equals(header_str)) {
+                int[] offsets = {line_start, headerValueStart, i - 2};
+                return offsets;
+            }
+        }
+        return null;
+    }
 
     // this is why hackxor2 is using python
+    // todo refactor to use getHeaderOffsets
     public static byte[] addOrReplaceHeader(byte[] request, String header, String value) {
         try {
             int i = 0;
@@ -52,7 +116,6 @@ public class Utilities {
                 }
 
                 if(i+2<end && request[i] == '\r' && request[i+1] == '\n') {
-                    out("cow");
                     outputStream.write(Arrays.copyOfRange(request, 0, i));
                     outputStream.write(helpers.stringToBytes(header + ": " + value+"\r\n"));
                     outputStream.write(Arrays.copyOfRange(request, i, end));
