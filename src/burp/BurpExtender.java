@@ -2,6 +2,8 @@ package burp;
 
 import com.sun.xml.internal.messaging.saaj.util.Base64;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -10,7 +12,7 @@ public class BurpExtender implements IBurpExtender {
     private static final String version = "0.11";
 
     // provides potentially useful info but increases memory usage
-    static final boolean SAVE_RESPONSES = true;
+    static final boolean SAVE_RESPONSES = false;
 
 
     @Override
@@ -65,11 +67,13 @@ class Monitor implements Runnable, IExtensionStateListener {
         IHttpRequestResponse req = metaReq.getRequest();
         String type = collab.getType(id);
         String severity = "High";
+        String ipAddress = interaction.getProperty("client_ip");
 
-
-        if(interaction.getProperty("client_ip").startsWith("74.125.")){
+        if(ipAddress.startsWith("74.125.")){
             return;
         }
+
+
 
         String rawDetail = interaction.getProperty("request");
         if (rawDetail == null) {
@@ -81,7 +85,18 @@ class Monitor implements Runnable, IExtensionStateListener {
             rawDetail = interaction.getProperty("raw_query");
         }
 
-        String message = "The collaborator was contacted by <b>" + interaction.getProperty("client_ip") +"</b>";
+        String message = "The collaborator was contacted by <b>" + ipAddress;
+
+        try {
+            String reverseDns = InetAddress.getByName(ipAddress).getCanonicalHostName();
+            if (!ipAddress.equals(reverseDns)) {
+                message += " ("+reverseDns +")";
+            }
+        }
+        catch (UnknownHostException e) {
+            message += " (reverse dns lookup failed)";
+        }
+        message +=  "</b>";
 
         try {
             long interactionTime = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss z").parse(interaction.getProperty("time_stamp")).getTime();
@@ -236,8 +251,13 @@ class Injector implements IProxyListener {
 
     public byte[] injectPayloads(byte[] request, Integer requestCode) {
 
-        //String collabId = collab.generateCollabId(requestCode, "LegitAbsWonkyHost");
+        //String collabId = collab.generateCollabId(requestCode, "TRACE");
         //String host = Utilities.getHeader(request, "Host");
+        //request = Utilities.replaceRequestLine(request, "TRACE /?action=http://"+collabId+ " HTTP/1.1");
+        //request = Utilities.addOrReplaceHeader(request, "Content-Length", "0");
+        //request = Utilities.addOrReplaceHeader(request, "Content-Type", "application/x-www-form-urlencoded");
+
+
         //Utilities.out("hm: '"+host+"'");
         //request = Utilities.addOrReplaceHeader(request, "Host", host+":80@"+collabId); // worked on Incap
 
@@ -266,7 +286,6 @@ class Injector implements IProxyListener {
 
         for (String[] injection: injectionPoints) {
             String payload = injection[2].replace("%s", collab.generateCollabId(requestCode, injection[1]));
-            Utilities.out(Arrays.toString(injection));
             switch ( injection[0] ){
                 case "param":
                     IParameter param = Utilities.helpers.buildParameter(injection[1], payload, IParameter.PARAM_URL);
