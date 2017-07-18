@@ -101,6 +101,8 @@ public class Utilities {
         try {
             int i = 0;
             int end = request.length;
+            while (i < end && request[i++] != '\n') {
+            }
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             while (i < end) {

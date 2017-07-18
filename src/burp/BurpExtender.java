@@ -9,7 +9,7 @@ import java.util.*;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Collaborator Everywhere";
-    private static final String version = "0.11";
+    private static final String version = "1.0";
 
     // provides potentially useful info but increases memory usage
     static final boolean SAVE_RESPONSES = false;
@@ -69,11 +69,11 @@ class Monitor implements Runnable, IExtensionStateListener {
         String severity = "High";
         String ipAddress = interaction.getProperty("client_ip");
 
+        /*
         if(ipAddress.startsWith("74.125.")){
             return;
         }
-
-
+        */
 
         String rawDetail = interaction.getProperty("request");
         if (rawDetail == null) {
@@ -251,38 +251,10 @@ class Injector implements IProxyListener {
 
     public byte[] injectPayloads(byte[] request, Integer requestCode) {
 
-        //String collabId = collab.generateCollabId(requestCode, "TRACE");
-        //String host = Utilities.getHeader(request, "Host");
-        //request = Utilities.replaceRequestLine(request, "TRACE /?action=http://"+collabId+ " HTTP/1.1");
-        //request = Utilities.addOrReplaceHeader(request, "Content-Length", "0");
-        //request = Utilities.addOrReplaceHeader(request, "Content-Type", "application/x-www-form-urlencoded");
-
-
-        //Utilities.out("hm: '"+host+"'");
-        //request = Utilities.addOrReplaceHeader(request, "Host", host+":80@"+collabId); // worked on Incap
-
-
-        //request = Utilities.addOrReplaceHeader(request, "Host", host+"\r\nHost: a:b@"+collabId);
-        //request = Utilities.replaceRequestLine(request, "GET /?proxy="+collabId+" HTTP/1.1");
-        //request = Utilities.addOrReplaceHeader(request, "Host", collabId+"\r\nHost: "+host);
-
-
-        //request = Utilities.replaceRequestLine(request, "GET http://" + host + "/?q="+collabId.split("[.]")[0] + " HTTP/1.1");
-        //request = Utilities.addOrReplaceHeader(request, "Host", host+":80@"+collabId);
-        //request = Utilities.addOrReplaceHeader(request, "Host", host+"\r\nHost: a:b@"+collabId);
-
-
-        //request = Utilities.replaceRequestLine(request, "GET http://" + collabId + "/?q="+collabId.split("[.]")[0] + " HTTP/1.1"); // worked on bluecoat
-        //request = Utilities.addOrReplaceHeader(request, "Host", host);
-
-        //request = Utilities.replaceRequestLine(request, "GET @"+collabId + "/"+collabId.split("[.]")[0] + " HTTP/1.1"); // worked on newrelic
-
-        //request = Utilities.replaceRequestLine(request, "CONNECT "+collabId + ":443 HTTP/1.1");
-        //request = Utilities.addOrReplaceHeader(request, "X-HTTP-Method-Override", "CONNECT");
+        //request = Utilities.replaceRequestLine(request, "GET @"+collabId + "/"+collabId.split("[.]")[0] + " HTTP/1.1");
+        //request = Utilities.addOrReplaceHeader(request, "Referer", "http://portswigger-labs.net/redirect.php?url=https://portswigger-labs.net/"+collabId);
 
         request = Utilities.addOrReplaceHeader(request, "Cache-Control", "no-transform");
-        //String collabId = collab.generateCollabId(requestCode, "Forwarded");
-        //request = Utilities.addOrReplaceHeader(request, "Forwarded", "for="+collabId+";by="+collabId+";host="+collabId);
 
         for (String[] injection: injectionPoints) {
             String payload = injection[2].replace("%s", collab.generateCollabId(requestCode, injection[1]));
@@ -331,23 +303,3 @@ class Injector implements IProxyListener {
     }
 
 }
-
-/*class ActiveScanner implements IScannerCheck {
-    @Override
-    public List<IScanIssue> doPassiveScan(IHttpRequestResponse iHttpRequestResponse) {
-        return new ArrayList<IScanIssue>();
-    }
-
-    @Override
-    public List<IScanIssue> doActiveScan(IHttpRequestResponse requestResponse, IScannerInsertionPoint iScannerInsertionPoint) {
-        iHttpRequestResponse.getUrl();
-
-        byte[] attack = Utilities.replaceRequestLine(requestResponse.getRequest(), );
-        return null;
-    }
-
-    @Override
-    public int consolidateDuplicateIssues(IScanIssue iScanIssue, IScanIssue iScanIssue1) {
-        return 0;
-    }
-}*/

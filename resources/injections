@@ -1,0 +1,39 @@
+# Lines starting with # are ignored
+#param,u,http://%s/
+#param,href,http://%s/
+#param,action,http://%s/
+#param,host,%s
+#param,http_host,%s
+#param,email,root@%s
+#param,url,http://%s/
+#param,load,http://%s/
+#param,preview,http://%s/
+#param,target,http://%s/
+#param,proxy,http://%s/
+#param,from,http://%s/
+#param,src,http://%s/
+#param,ref,http://%s/
+#param,referrer,http://%s/
+header,Contact,root@%s
+header,From,root@%s
+header,User-Agent,Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36 root@%s
+header,Referer,http://%s/ref
+#header,X-Original-URL,http://%s/
+header,X-Wap-Profile,http://%s/wap.xml
+#header,Profile,http://%s/wap.xml
+#header,X-Arbitrary,http://%s/
+#header,X-HTTP-DestinationURL,http://%s/
+#header,X-Forwarded-Proto,http://%s/
+#header,Origin,http://%s
+#header,X-Forwarded-Host,%s
+#header,X-Forwarded-Server,%s
+#header,X-Host,%s
+#header,Proxy-Host,%s
+#header,Destination,%s
+header,X-Forwarded-For,%s
+header,True-Client-IP,%s
+header,Client-ip,%s
+header,X-Real-IP, %s
+#header,Proxy,http://%s
+#header,Via,1.1 %s
+header,Forwarded,for=%s;by=%s;host=%s
