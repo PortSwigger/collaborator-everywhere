@@ -1,7 +1,6 @@
 package burp;
 
-import com.sun.xml.internal.messaging.saaj.util.Base64;
-
+import javax.xml.bind.DatatypeConverter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
@@ -115,12 +114,14 @@ class Monitor implements Runnable, IExtensionStateListener {
             severity = "Low";
         }
 
-        message += "<pre>    "+Base64.base64Decode(rawDetail).replace("<", "&lt;").replace("\n", "\n    ")+"</pre>";
+        String decodedDetail = new String(DatatypeConverter.parseBase64Binary(rawDetail));
+        message += "<pre>    "+decodedDetail.replace("<", "&lt;").replace("\n", "\n    ")+"</pre>";
 
         message += "The payload was sent at "+new Date(metaReq.getTimestamp()).toString() + " and received on " + interaction.getProperty("time_stamp") +"<br/><br/>";
 
+        IRequestInfo reqInfo = Utilities.callbacks.getHelpers().analyzeRequest(req.getHttpService(), req.getRequest());
         Utilities.callbacks.addScanIssue(
-                new CustomScanIssue(req.getHttpService(), req.getUrl(), new IHttpRequestResponse[]{req}, "Collaborator Pingback ("+interaction.getProperty("type")+"): "+type, message+interaction.getProperties().toString(), severity, "Certain", "Panic"));
+                new CustomScanIssue(req.getHttpService(), reqInfo.getUrl(), new IHttpRequestResponse[]{req}, "Collaborator Pingback ("+interaction.getProperty("type")+"): "+type, message+interaction.getProperties().toString(), severity, "Certain", "Panic"));
 
     }
 
@@ -290,7 +291,7 @@ class Injector implements IProxyListener {
 
 
         // don't tamper with requests already heading to the collaborator
-        if (messageInfo.getHost().endsWith(collab.getLocation())) {
+        if (messageInfo.getHttpService().getHost().endsWith(collab.getLocation())) {
             return;
         }
 

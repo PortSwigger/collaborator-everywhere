@@ -229,17 +229,17 @@ class CustomScanIssue implements IScanIssue {
         return httpService;
     }
 
-    @Override
+//    @Override
     public String getHost() {
         return null;
     }
 
-    @Override
+//    @Override
     public int getPort() {
         return 0;
     }
 
-    @Override
+//    @Override
     public String getProtocol() {
         return null;
     }
