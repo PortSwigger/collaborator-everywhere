@@ -1,0 +1,12 @@
+Uuid: 126139eafd024b23920ba541040f03b5
+ExtensionType: 1
+Name: Collaborator Everywhere
+RepoName: collaborator-everywhere
+ScreenVersion: 1.0
+SerialVersion: 1
+MinPlatformVersion: 0
+ProOnly: True
+Author: James Kettle
+ShortDescription: Augments your proxy traffic by injecting non-invasive headers designed to reveal backend systems by causing pingbacks to Burp Collaborator.
+EntryPoint: build/libs/collaboratorEverywhere.jar
+BuildCommand: gradle jar
