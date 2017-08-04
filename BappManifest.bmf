@@ -8,5 +8,5 @@ MinPlatformVersion: 0
 ProOnly: True
 Author: James Kettle
 ShortDescription: Augments your proxy traffic by injecting non-invasive headers designed to reveal backend systems by causing pingbacks to Burp Collaborator.
-EntryPoint: build/libs/collaboratorEverywhere.jar
-BuildCommand: gradle jar
+EntryPoint: build/libs/collaborator-everywhere-all.jar
+BuildCommand: gradle fatJar
