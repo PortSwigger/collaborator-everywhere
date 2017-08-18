@@ -30,10 +30,10 @@ header,X-Wap-Profile,http://%s/wap.xml
 #header,X-Host,%s
 #header,Proxy-Host,%s
 #header,Destination,%s
-header,X-Forwarded-For,%s
-header,True-Client-IP,%s
-header,Client-ip,%s
-header,X-Real-IP, %s
 #header,Proxy,http://%s
 #header,Via,1.1 %s
-header,Forwarded,for=%s;by=%s;host=%s
+header,X-Forwarded-For,local.%s
+header,True-Client-IP,local.%s
+header,Client-ip,local.%s
+header,X-Real-IP,local.%s
+header,Forwarded,for=local.%s;by=local.%s;host=local.%s

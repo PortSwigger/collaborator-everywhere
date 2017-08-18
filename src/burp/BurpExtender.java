@@ -8,7 +8,7 @@ import java.util.*;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Collaborator Everywhere";
-    private static final String version = "1.0";
+    private static final String version = "1.1";
 
     // provides potentially useful info but increases memory usage
     static final boolean SAVE_RESPONSES = false;
