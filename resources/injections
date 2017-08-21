@@ -32,8 +32,8 @@ header,X-Wap-Profile,http://%s/wap.xml
 #header,Destination,%s
 #header,Proxy,http://%s
 #header,Via,1.1 %s
-header,X-Forwarded-For,local.%s
-header,True-Client-IP,local.%s
-header,Client-ip,local.%s
-header,X-Real-IP,local.%s
-header,Forwarded,for=local.%s;by=local.%s;host=local.%s
+header,X-Forwarded-For,spoofed.%s
+header,True-Client-IP,spoofed.%s
+header,Client-ip,spoofed.%s
+header,X-Real-IP,spoofed.%s
+header,Forwarded,for=spoofed.%s;by=spoofed.%s;host=spoofed.%s
