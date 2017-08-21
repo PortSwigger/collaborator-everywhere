@@ -184,6 +184,9 @@ class Correlator {
         catch (NullPointerException e) {
             Utilities.out("Unable to calculate client IP - collaborator may not be functional");
         }
+        catch (java.lang.IllegalArgumentException e) {
+            Utilities.out("The Collaborator appears to be misconfigured. Please run a health check via Project Options->Misc. Also, note that Collaborator Everywhere does not support the IP-address mode.");
+        }
 
     }
 
