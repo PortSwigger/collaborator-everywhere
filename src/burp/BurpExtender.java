@@ -262,6 +262,8 @@ class Injector implements IProxyListener {
 
         for (String[] injection: injectionPoints) {
             String payload = injection[2].replace("%s", collab.generateCollabId(requestCode, injection[1]));
+	    // replace %h with corresponding Host header (same as with %s for Collaborator)
+	    payload = payload.replace("%h", Utilities.getHeader(request, "Host"));
             switch ( injection[0] ){
                 case "param":
                     IParameter param = Utilities.helpers.buildParameter(injection[1], payload, IParameter.PARAM_URL);
