@@ -37,6 +37,8 @@ header,X-Wap-Profile,http://%s/wap.xml
 #header,Via,1.1 %s
 header,X-Forwarded-For,spoofed.%s
 header,True-Client-IP,spoofed.%s
-header,Client-ip,spoofed.%s
+header,Client-IP,spoofed.%s
+header,X-Client-IP,spoofed.%s
 header,X-Real-IP,spoofed.%s
+header,X-Originating-IP,spoofed.%s
 header,Forwarded,for=spoofed.%s;by=spoofed.%s;host=spoofed.%s
