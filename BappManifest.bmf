@@ -2,8 +2,8 @@ Uuid: 126139eafd024b23920ba541040f03b5
 ExtensionType: 1
 Name: Collaborator Everywhere
 RepoName: collaborator-everywhere
-ScreenVersion: 1.1
-SerialVersion: 2
+ScreenVersion: 1.2
+SerialVersion: 3
 MinPlatformVersion: 0
 ProOnly: True
 Author: James Kettle
