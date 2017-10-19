@@ -1,6 +1,5 @@
 package burp;
 
-import javax.xml.bind.DatatypeConverter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
@@ -8,7 +7,7 @@ import java.util.*;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Collaborator Everywhere";
-    private static final String version = "1.2";
+    private static final String version = "1.3";
 
     // provides potentially useful info but increases memory usage
     static final boolean SAVE_RESPONSES = false;
@@ -54,6 +53,9 @@ class Monitor implements Runnable, IExtensionStateListener {
         }
         catch (InterruptedException e) {
             Utilities.out("Interrupted");
+        }
+        catch (Exception e) {
+            Utilities.out("Error fetching/handling interactions: "+e.getMessage());
         }
 
         Utilities.out("Shutting down collaborator monitor thread");
@@ -114,7 +116,7 @@ class Monitor implements Runnable, IExtensionStateListener {
             severity = "Low";
         }
 
-        String decodedDetail = new String(DatatypeConverter.parseBase64Binary(rawDetail));
+        String decodedDetail = new String(Utilities.helpers.base64Decode(rawDetail));
         message += "<pre>    "+decodedDetail.replace("<", "&lt;").replace("\n", "\n    ")+"</pre>";
 
         message += "The payload was sent at "+new Date(metaReq.getTimestamp()).toString() + " and received on " + interaction.getProperty("time_stamp") +"<br/><br/>";
@@ -124,7 +126,6 @@ class Monitor implements Runnable, IExtensionStateListener {
         IRequestInfo reqInfo = Utilities.callbacks.getHelpers().analyzeRequest(req.getHttpService(), req.getRequest());
         Utilities.callbacks.addScanIssue(
                 new CustomScanIssue(req.getHttpService(), reqInfo.getUrl(), new IHttpRequestResponse[]{req}, "Collaborator Pingback ("+interaction.getProperty("type")+"): "+type, message+interaction.getProperties().toString(), severity, "Certain", "Panic"));
-
     }
 
 }
