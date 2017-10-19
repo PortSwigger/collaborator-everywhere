@@ -41,5 +41,5 @@ header,Client-IP,spoofed.%s
 header,X-Client-IP,spoofed.%s
 header,X-Real-IP,spoofed.%s
 header,X-Originating-IP,spoofed.%s
-header,CF-Connecting-IP,spoofed.%s
+header,CF-Connecting_IP,spoofed.%s
 header,Forwarded,for=spoofed.%s;by=spoofed.%s;host=spoofed.%s
