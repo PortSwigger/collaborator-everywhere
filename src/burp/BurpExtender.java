@@ -296,7 +296,13 @@ class Injector implements IProxyListener {
         }
 
         IHttpRequestResponse messageInfo = proxyMessage.getMessageInfo();
-
+	
+	// only tamper with requests that are in scope
+	IRequestInfo reqinfo = Utilities.helpers.analyzeRequest(messageInfo.getHttpService(), messageInfo.getRequest());
+	
+	if (!Utilities.callbacks.isInScope(reqinfo.getUrl())) {
+		return;
+	}
 
         // don't tamper with requests already heading to the collaborator
         if (messageInfo.getHttpService().getHost().endsWith(collab.getLocation())) {
