@@ -121,7 +121,7 @@ class Monitor implements Runnable, IExtensionStateListener {
 
         message += "The payload was sent at "+new Date(metaReq.getTimestamp()).toString() + " and received on " + interaction.getProperty("time_stamp") +"<br/><br/>";
 
-        message += "To manually replicate this issue, use the Burp Collaborator Client available via the 'Burp' menu on the top left.<br/><br/>";
+        message += "To manually replicate this issue, use the Collaborator Client available via the top level tab in Burp.<br/><br/>";
 
         IRequestInfo reqInfo = Utilities.callbacks.getHelpers().analyzeRequest(req.getHttpService(), req.getRequest());
         Utilities.callbacks.addScanIssue(
