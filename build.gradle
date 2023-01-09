@@ -5,9 +5,12 @@ repositories {
 }
 
 dependencies {
-    compile 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
-    compile 'org.apache.commons:commons-lang3:3.5'
+    implementation 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
+    implementation 'org.apache.commons:commons-lang3:3.5'
 }
+
+targetCompatibility = '1.8'
+sourceCompatibility = '1.8'
 
 sourceSets {
     main {
@@ -22,6 +25,6 @@ sourceSets {
 
 task fatJar(type: Jar) {
     baseName = project.name + '-all'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
