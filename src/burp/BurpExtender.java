@@ -100,7 +100,7 @@ class Monitor implements Runnable, IExtensionStateListener {
         message +=  "</b>";
 
         try {
-            long interactionTime = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss z").parse(interaction.getProperty("time_stamp")).getTime();
+            long interactionTime = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SSS z").parse(interaction.getProperty("time_stamp")).getTime();
             long mill = interactionTime - metaReq.getTimestamp();
             int seconds = (int) (mill / 1000) % 60;
             int minutes = (int) ((mill / (1000 * 60)) % 60);
